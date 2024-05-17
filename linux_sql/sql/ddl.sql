@@ -25,3 +25,4 @@ CREATE TABLE PUBLIC.host_usage
      CONSTRAINT host_usage_host_info_fk FOREIGN KEY (host_id) REFERENCES 
      host_info(id) 
   );
+
