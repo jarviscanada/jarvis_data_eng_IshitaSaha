@@ -35,8 +35,7 @@ The project uses several technologies to achieve its objectives efficiently. Doc
 To implement the project, start by setting up PostgreSQL with Docker, pulling the image from Docker Hub, and configuring a container. Then, develop two Bash scripts, host_info.sh and host_usage.sh, for collecting hardware information and real-time usage data from each host. Using cron, schedule the host_usage script to run every minute. This data is then collected and stored into the PostgreSQL database where it can be accessed by its users.
 
 ## Architecture
-Draw a cluster diagram with three Linux hosts, a DB, and agents (use draw.io website). Image must be saved to the `assets` directory.
-![Cluster Diagram](/home/rocky/dev/jarvis_data_eng_ishita/assets/Clusture_Diagram.jpeg)
+![Cluster Diagram](../assets/Clusture_Diagram.jpeg)
 
 ## Scripts
 Shell script description and usage.
@@ -102,7 +101,7 @@ esac
 
  ``` 
 - host_info.sh :
-  This script collects hardware information from the host system and inserts it into a PostgreSQL database. The collected information includes hostname, CPU number, CPU architecture, model, memory, and timestamp.
+  This script collects hardware information from the host system and inserts it into a PostgreSQL database.
 ``` 
 #!/bin/bash
 
@@ -156,7 +155,7 @@ echo $insert_stmt
 
 exit $?
 - ```
-- host_usage.sh
+- host_usage.sh : This script collects usage data from the host system and inserts it into a PostgreSQL database. 
 ```
 #!/bin/bash
 
@@ -211,7 +210,7 @@ psql -h $psql_host -p $psql_port -d $db_name -U $psql_user -c "$insert_stmt"
 
 exit $?
 ```
-- crontab
+- crontab : Runs ```host_usage.sh``` at regular intervals.
 ```
 # Edit crontab jobs
 crontab -e
@@ -220,7 +219,7 @@ crontab -e
 crontab -
 
 # File location for the script
-* * * * * /home/rocky/dev/jarvis_data_eng_ishita/linux_sql/scripts/host_usage.sh localhost 5432 host_agent postgres password > /tmp/host_usage.log
+* * * * * ../linux_sql/scripts/host_usage.sh localhost 5432 host_agent postgres password > /tmp/host_usage.log
 ```
 - queries.sql 
   - Average CPU and Memory Usage : To identify servers with consistently high or low CPU and memory usage.
@@ -251,57 +250,46 @@ crontab -
   ```
 ## Database Modeling
 
-- `host_info`
+ `host_info` Schema
 
-  | Table      | Column            | Data Type | Constraints               |
-  |------------|-------------------|-----------|---------------------------|
-  | host_info  | id                | SERIAL    | PRIMARY KEY               |
-  |            | hostname          | VARCHAR   | NOT NULL, UNIQUE          |
-  |            | cpu_number        | INT2      | NOT NULL                  |
-  |            | cpu_architecture  | VARCHAR   | NOT NULL                  |
-  |            | cpu_model         | VARCHAR   | NOT NULL                  |
-  |            | cpu_mhz           | FLOAT8    |                           |
-  |            | l2_cache          | INT4      | NOT NULL                  |
-  |            | timestamp         | TIMESTAMP |                           |
-  |            | total_mem         | INT4      |                           |
+  | Table     | Column           | Description            | Data Type | Constraints      |
+  |-----------|------------------|------------------------|-----------|------------------|
+  | host_info | id               | Unique identifier      | SERIAL    | PRIMARY KEY      |
+  |           | hostname         | Hostname of the server | VARCHAR   | NOT NULL, UNIQUE |
+  |           | cpu_number       | Number of CPU cores    | INT2      | NOT NULL         |
+  |           | cpu_architecture | CPU architecture       | VARCHAR   | NOT NULL         |
+  |           | cpu_model        | CPU model name         | VARCHAR   | NOT NULL         |
+  |           | cpu_mhz          | CPU clock speed in MHz | FLOAT8    | NOT NULL         |
+  |           | l2_cache         | L2 cache size in KB    | INT4      | NOT NULL         |
+  |           | total_mem        | Total memory in MB     | INT4      |                  |
+  |           | timestamp        | Timestamp of insertion | TIMESTAMP |                  |
 
 
-- `host_usage`
-
-  | host_usage | timestamp         | TIMESTAMP | NOT NULL              |
-  |--------|-------------------|-----------|---------------------------|
-  |            | host_id           | SERIAL    | NOT NULL, FOREIGN KEY |
-  |            | memory_free       | INT4      | NOT NULL              |
-  |            | cpu_idle          | INT2      | NOT NULL              |
-  |            | cpu_kernel        | INT2      | NOT NULL              |
-  |            | disk_io           | INT4      | NOT NULL              |
-  |            | disk_available    | INT4      | NOT NULL              |
+- `host_usage` Schema
+- 
+  | Table      | Column         | Description                       | Data Type | Constraints           |
+  |------------|----------------|-----------------------------------|-----------|-----------------------|
+  | host_usage | host_id        | Foreign key to ```host_info.id``` | SERIAL    | NOT NULL, FOREIGN KEY |
+  |            | memory_free    | Free memory in MB                 | INT4      | NOT NULL              |
+  |            | cpu_idle       | CPU idle percentage               | INT2      | NOT NULL              |
+  |            | cpu_kernel     | CPU kernel usage percentage       | INT2      | NOT NULL              |
+  |            | disk_io        | Disk I/O operations               | INT4      | NOT NULL              |
+  |            | disk_available | Available disk space in MB        | INT4      | NOT NULL              |
+- |            | timestamp      | Timestamp of data collection      | TIMESTAMP |                       |
 
 
 
 
 # Test
-How did you test your bash scripts DDL? What was the result?
-To test the DDL (Data Definition Language) scripts, I executed them against a PostgreSQL instance locally. This involved running the ddl.sql script using the psql command-line tool, specifying the appropriate host, user, and database. The result of the test was successful execution without any errors. I verified the creation of the tables by querying the database to ensure that the tables were created with the expected schema.
-DML
-used the prostgressql. 
+To test the DDL (Data Definition Language) scripts, I executed them, against the PostgreSQL instance locally. The ddl.sql script was executed using the psql command-line tool, specifying the appropriate host, user, and database. The result of the test was successfully executed without any errors. The tables were verified to ensure they were created with the expected schema by querying the database.
 
 # Deployment
-How did you deploy your app? (e.g. Github, crontab, docker)
-
-deploy psotgressql
-create tables to get hardware and memory usage information and collect the data into the database.
-The app was deployed using a combination of tools and techniques:
-Github: The bash scripts and SQL files were version-controlled using Git and hosted on GitHub. This facilitated collaborative development, version tracking, and easy access to the latest codebase.
-
-Crontab: The host_usage.sh script was scheduled and automated using the Linux crontab utility. This ensured that the script ran at regular intervals to collect and insert hardware usage data into the PostgreSQL database.
-
-Docker: For local development and testing, Docker was utilized to set up a PostgreSQL instance. This provided an isolated environment where the app could be developed and tested without affecting the host system. Additionally, the psql_docker.sh script was used to manage the Docker container running the PostgreSQL instance.
+A docker was installed to set up a PostgreSQL instance. This provided an isolated environment where the application could be developed and tested. The psql_docker.sh script manages the Docker container running the PostgreSQL instance.
+Using Linux crontab, the host_usage.sh script is scheduled to collect the data at regular intervals automatically.  This enabled the regular collection and insertion of hardware usage data into the PostgreSQL database without manual intervention.
+The bash scripts and SQL files were stored and version-controlled using Git and hosted on GitHub.
 
 
 # Improvements
-Write at least three things you want to improve
-e.g.
-- handle hardware updates
-- blah
-- blah
+- Handle disk usage alerts
+- Handle errors 
+- Continuous integration
