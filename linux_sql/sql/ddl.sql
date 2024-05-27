@@ -1,3 +1,5 @@
+psql -h localhost -p 5432 -U postgres
+
 \c host_agent
 
 CREATE TABLE IF NOT EXISTS public.host_info (
